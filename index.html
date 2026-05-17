@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schallwellen Labor</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071015;
+      --panel: rgba(18, 27, 33, .86);
+      --panel2: rgba(255,255,255,.06);
+      --line: rgba(255,255,255,.14);
+      --text: #f2f6ea;
+      --muted: rgba(242,246,234,.66);
+      --green: #55df9b;
+      --cyan: #5cc8ff;
+      --red: #ff6978;
+      --yellow: #f4c95d;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% 10%, rgba(85,223,155,.16), transparent 34%),
+        radial-gradient(circle at 86% 18%, rgba(92,200,255,.14), transparent 36%),
+        linear-gradient(135deg, #071015, #10151d 52%, #071015);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+
+    header {
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      gap: 18px;
+      justify-content: space-between;
+      padding: 16px 22px;
+      backdrop-filter: blur(18px);
+      background: rgba(7,16,21,.74);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    h1 {
+      font-size: clamp(19px, 3vw, 30px);
+      line-height: 1;
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 5px 0 0;
+    }
+
+    .controls {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    button, select {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      font: inherit;
+      min-height: 42px;
+      padding: 0 13px;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 800;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease;
+    }
+
+    button:hover {
+      border-color: rgba(242,246,234,.36);
+      transform: translateY(-1px);
+    }
+
+    .primary {
+      background: linear-gradient(135deg, var(--green), var(--cyan));
+      border: 0;
+      color: #061015;
+    }
+
+    .danger {
+      background: rgba(255,105,120,.14);
+      border-color: rgba(255,105,120,.32);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(260px, 330px) 1fr;
+      gap: 18px;
+      padding: 18px;
+      min-height: 0;
+    }
+
+    aside, .visuals {
+      min-width: 0;
+    }
+
+    aside {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      backdrop-filter: blur(18px);
+      align-self: start;
+    }
+
+    .readout {
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      gap: 14px;
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+    }
+
+    .metric {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .bar {
+      grid-column: 1 / -1;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.09);
+      overflow: hidden;
+    }
+
+    .bar i {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green), var(--yellow), var(--red));
+    }
+
+    label {
+      color: var(--muted);
+      display: block;
+      font-size: 12px;
+      font-weight: 800;
+      margin: 14px 0 8px;
+      text-transform: uppercase;
+    }
+
+    input[type="range"] {
+      accent-color: var(--green);
+      width: 100%;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      margin: 16px 0 0;
+    }
+
+    .visuals {
+      display: grid;
+      grid-template-rows: minmax(300px, 1.05fr) minmax(220px, .8fr);
+      gap: 18px;
+      min-height: calc(100vh - 118px);
+    }
+
+    .scope {
+      background: rgba(10, 18, 24, .78);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .scope header {
+      background: rgba(255,255,255,.04);
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      min-height: 46px;
+      padding: 10px 13px;
+      position: absolute;
+      inset: 0 0 auto;
+      z-index: 2;
+    }
+
+    .scope h2 {
+      font-size: 13px;
+      letter-spacing: 0;
+      margin: 0;
+      text-transform: uppercase;
+    }
+
+    .scope p {
+      color: var(--muted);
+      font-size: 12px;
+      margin: 0;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .badge {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 5px 9px;
+    }
+
+    @media (max-width: 880px) {
+      header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .controls { justify-content: flex-start; }
+
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .visuals {
+        min-height: 760px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Schallwellen Labor</h1>
+        <p class="subtitle">Sieh live, wie dein Mikrofon Luftdruck als Welle und Frequenzen misst.</p>
+      </div>
+      <div class="controls">
+        <select id="mode" title="Darstellung">
+          <option value="line">Wellenlinie</option>
+          <option value="fill">Gefuellte Welle</option>
+          <option value="dots">Punkte</option>
+        </select>
+        <button id="freeze">Pause</button>
+        <button id="start" class="primary">Mikrofon starten</button>
+      </div>
+    </header>
+
+    <main>
+      <aside>
+        <div class="readout">
+          <div class="metric">
+            <span>Lautstaerke</span>
+            <strong id="volume">0%</strong>
+            <div class="bar"><i id="volumeBar"></i></div>
+          </div>
+          <div class="metric">
+            <span>Peak</span>
+            <strong id="peak">0%</strong>
+            <div class="bar"><i id="peakBar"></i></div>
+          </div>
+          <div class="metric">
+            <span>Dominante Frequenz</span>
+            <strong id="frequency">0 Hz</strong>
+            <div class="bar"><i id="freqBar"></i></div>
+          </div>
+        </div>
+
+        <label for="gain">Empfindlichkeit <span id="gainValue">1.4x</span></label>
+        <input id="gain" type="range" min="0.4" max="4" value="1.4" step="0.1" />
+
+        <label for="smooth">Glaettung <span id="smoothValue">72%</span></label>
+        <input id="smooth" type="range" min="0" max="95" value="72" step="1" />
+
+        <label for="zoom">Wellen-Zoom <span id="zoomValue">1.0x</span></label>
+        <input id="zoom" type="range" min="0.5" max="4" value="1" step="0.1" />
+
+        <p class="hint">
+          Sprich, klatsche oder spiele Musik ab. Oben siehst du die echte Schallwelle aus dem Zeitverlauf, unten das Frequenzspektrum.
+          Der Browser fragt nach Mikrofon-Erlaubnis.
+        </p>
+      </aside>
+
+      <section class="visuals">
+        <div class="scope">
+          <header>
+            <div>
+              <h2>Schallwelle</h2>
+              <p>Zeitverlauf des Mikrofonsignals</p>
+            </div>
+            <span class="badge" id="status">Bereit</span>
+          </header>
+          <canvas id="wave"></canvas>
+        </div>
+
+        <div class="scope">
+          <header>
+            <div>
+              <h2>Frequenzspektrum</h2>
+              <p>Tiefe Toene links, hohe Toene rechts</p>
+            </div>
+            <span class="badge" id="sampleRate">-- Hz</span>
+          </header>
+          <canvas id="spectrum"></canvas>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const waveCanvas = document.getElementById("wave");
+    const specCanvas = document.getElementById("spectrum");
+    const waveCtx = waveCanvas.getContext("2d");
+    const specCtx = specCanvas.getContext("2d");
+
+    const startBtn = document.getElementById("start");
+    const freezeBtn = document.getElementById("freeze");
+    const mode = document.getElementById("mode");
+    const gain = document.getElementById("gain");
+    const smooth = document.getElementById("smooth");
+    const zoom = document.getElementById("zoom");
+    const gainValue = document.getElementById("gainValue");
+    const smoothValue = document.getElementById("smoothValue");
+    const zoomValue = document.getElementById("zoomValue");
+    const status = document.getElementById("status");
+    const volume = document.getElementById("volume");
+    const peak = document.getElementById("peak");
+    const frequency = document.getElementById("frequency");
+    const volumeBar = document.getElementById("volumeBar");
+    const peakBar = document.getElementById("peakBar");
+    const freqBar = document.getElementById("freqBar");
+    const sampleRate = document.getElementById("sampleRate");
+
+    let audioContext;
+    let analyser;
+    let stream;
+    let timeData;
+    let freqData;
+    let frozen = false;
+    let running = false;
+
+    function resizeCanvas(canvas, ctx) {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function resize() {
+      resizeCanvas(waveCanvas, waveCtx);
+      resizeCanvas(specCanvas, specCtx);
+    }
+
+    async function startMic() {
+      if (running) {
+        stopMic();
+        return;
+      }
+
+      try {
+        status.textContent = "Frage Mikrofon an";
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false
+          }
+        });
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 4096;
+        analyser.smoothingTimeConstant = Number(smooth.value) / 100;
+
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+
+        timeData = new Uint8Array(analyser.fftSize);
+        freqData = new Uint8Array(analyser.frequencyBinCount);
+
+        running = true;
+        startBtn.textContent = "Mikrofon stoppen";
+        startBtn.classList.add("danger");
+        status.textContent = "Live";
+        sampleRate.textContent = `${audioContext.sampleRate} Hz`;
+      } catch (error) {
+        status.textContent = "Kein Mikrofon";
+        alert("Mikrofon konnte nicht gestartet werden. Bitte Browser-Erlaubnis pruefen.");
+      }
+    }
+
+    function stopMic() {
+      if (stream) stream.getTracks().forEach(track => track.stop());
+      if (audioContext) audioContext.close();
+      running = false;
+      stream = null;
+      audioContext = null;
+      analyser = null;
+      startBtn.textContent = "Mikrofon starten";
+      startBtn.classList.remove("danger");
+      status.textContent = "Gestoppt";
+      sampleRate.textContent = "-- Hz";
+    }
+
+    function drawGrid(ctx, width, height) {
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "rgba(5, 12, 16, .94)";
+      ctx.fillRect(0, 0, width, height);
+      ctx.strokeStyle = "rgba(255,255,255,.07)";
+      ctx.lineWidth = 1;
+
+      for (let x = 0; x <= width; x += 48) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+
+      for (let y = 0; y <= height; y += 42) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = "rgba(85,223,155,.22)";
+      ctx.beginPath();
+      ctx.moveTo(0, height / 2);
+      ctx.lineTo(width, height / 2);
+      ctx.stroke();
+    }
+
+    function drawWave() {
+      const width = waveCanvas.clientWidth;
+      const height = waveCanvas.clientHeight;
+      drawGrid(waveCtx, width, height);
+
+      if (!analyser || !timeData) {
+        drawIdleWave(waveCtx, width, height);
+        return;
+      }
+
+      if (!frozen) analyser.getByteTimeDomainData(timeData);
+
+      const amplification = Number(gain.value) * Number(zoom.value);
+      let sum = 0;
+      let max = 0;
+      const center = height / 2;
+      const slice = width / (timeData.length - 1);
+
+      waveCtx.lineWidth = 2.4;
+      waveCtx.strokeStyle = "#55df9b";
+      waveCtx.fillStyle = "rgba(85,223,155,.14)";
+      waveCtx.beginPath();
+
+      for (let i = 0; i < timeData.length; i++) {
+        const normalized = (timeData[i] - 128) / 128;
+        const amp = Math.abs(normalized);
+        sum += amp * amp;
+        max = Math.max(max, amp);
+        const x = i * slice;
+        const y = center + normalized * center * .86 * amplification;
+
+        if (mode.value === "dots") {
+          if (i % 20 === 0) {
+            waveCtx.moveTo(x + 3, y);
+            waveCtx.arc(x, y, 3, 0, Math.PI * 2);
+          }
+        } else if (i === 0) {
+          waveCtx.moveTo(x, y);
+        } else {
+          waveCtx.lineTo(x, y);
+        }
+      }
+
+      if (mode.value === "fill") {
+        waveCtx.lineTo(width, center);
+        waveCtx.lineTo(0, center);
+        waveCtx.closePath();
+        waveCtx.fill();
+      }
+
+      waveCtx.stroke();
+
+      const rms = Math.sqrt(sum / timeData.length);
+      updateMetric(rms, max);
+    }
+
+    function drawSpectrum() {
+      const width = specCanvas.clientWidth;
+      const height = specCanvas.clientHeight;
+      drawGrid(specCtx, width, height);
+
+      if (!analyser || !freqData) {
+        return;
+      }
+
+      analyser.smoothingTimeConstant = Number(smooth.value) / 100;
+      if (!frozen) analyser.getByteFrequencyData(freqData);
+
+      const bars = Math.min(190, freqData.length);
+      const barWidth = width / bars;
+      let strongestIndex = 0;
+      let strongest = 0;
+
+      for (let i = 0; i < bars; i++) {
+        const index = Math.floor(i * freqData.length / bars);
+        const value = freqData[index] / 255;
+        const barHeight = value * height * .88;
+        const hue = 145 + i * 95 / bars;
+        specCtx.fillStyle = `hsl(${hue} 82% ${52 + value * 14}%)`;
+        specCtx.fillRect(i * barWidth, height - barHeight, Math.max(1, barWidth - 2), barHeight);
+
+        if (freqData[index] > strongest) {
+          strongest = freqData[index];
+          strongestIndex = index;
+        }
+      }
+
+      if (audioContext) {
+        const hz = strongestIndex * audioContext.sampleRate / analyser.fftSize;
+        frequency.textContent = strongest > 8 ? `${Math.round(hz)} Hz` : "0 Hz";
+        freqBar.style.width = `${Math.min(100, hz / 80)}%`;
+      }
+    }
+
+    function drawIdleWave(ctx, width, height) {
+      const now = performance.now() / 420;
+      ctx.strokeStyle = "rgba(92,200,255,.72)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let x = 0; x < width; x++) {
+        const y = height / 2 + Math.sin(x / 28 + now) * 22 + Math.sin(x / 73 - now * .8) * 11;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    function updateMetric(rms, max) {
+      const volumePercent = Math.min(100, Math.round(rms * Number(gain.value) * 180));
+      const peakPercent = Math.min(100, Math.round(max * Number(gain.value) * 100));
+      volume.textContent = `${volumePercent}%`;
+      peak.textContent = `${peakPercent}%`;
+      volumeBar.style.width = `${volumePercent}%`;
+      peakBar.style.width = `${peakPercent}%`;
+    }
+
+    function frame() {
+      drawWave();
+      drawSpectrum();
+      requestAnimationFrame(frame);
+    }
+
+    gain.addEventListener("input", () => gainValue.textContent = `${Number(gain.value).toFixed(1)}x`);
+    smooth.addEventListener("input", () => smoothValue.textContent = `${smooth.value}%`);
+    zoom.addEventListener("input", () => zoomValue.textContent = `${Number(zoom.value).toFixed(1)}x`);
+    startBtn.addEventListener("click", startMic);
+    freezeBtn.addEventListener("click", () => {
+      frozen = !frozen;
+      freezeBtn.textContent = frozen ? "Weiter" : "Pause";
+      status.textContent = frozen ? "Eingefroren" : (running ? "Live" : "Bereit");
+    });
+
+    window.addEventListener("resize", resize);
+    resize();
+    frame();
+  </script>
+</body>
+</html>
