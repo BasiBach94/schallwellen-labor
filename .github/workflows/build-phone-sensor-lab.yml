@@ -7,12 +7,17 @@ on:
       - 'phone-sensor-lab/**'
       - '.github/workflows/build-phone-sensor-lab.yml'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -29,8 +34,18 @@ jobs:
         working-directory: phone-sensor-lab
         run: gradle :app:assembleDebug --no-daemon
 
-      - name: Upload APK
+      - name: Upload APK as workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: PhoneSensorLab-debug-apk
           path: phone-sensor-lab/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publish APK to downloads folder
+        run: |
+          mkdir -p downloads
+          cp phone-sensor-lab/app/build/outputs/apk/debug/app-debug.apk downloads/PhoneSensorLab-debug.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add downloads/PhoneSensorLab-debug.apk
+          git commit -m "Publish PhoneSensorLab debug APK" || echo "No APK changes to commit"
+          git push
